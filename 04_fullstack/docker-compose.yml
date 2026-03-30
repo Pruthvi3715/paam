@@ -1,0 +1,88 @@
+version: '3.9'
+
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: paam_ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./01_rag_knowledge/data/ollama:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+  anythingllm:
+    image: mintplexlabs/anythingllm:latest
+    container_name: paam_anythingllm
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./01_rag_knowledge/data/anythingllm:/app/server/storage
+    environment:
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - LLM_PROVIDER=ollama
+      - LLM_MODEL=llama3.1:70b
+    depends_on:
+      - ollama
+
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: paam_chroma
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./01_rag_knowledge/data/chroma:/chroma/chroma
+    restart: unless-stopped
+
+  agentscope:
+    build: ../02_agents
+    container_name: paam_agentscope
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./04_fullstack/storage:/app/storage
+    environment:
+      - ANYTHINGLLM_URL=http://anythingllm:3001
+      - OLLAMA_URL=http://ollama:11434
+    depends_on:
+      - anythingllm
+      - ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  frontend:
+    build: ../03_avatar/frontend
+    container_name: paam_frontend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./04_fullstack/storage:/app/storage
+    environment:
+      - ANYTHINGLLM_URL=http://anythingllm:3001
+      - OLLAMA_URL=http://ollama:11434
+      - USE_LOCAL_TTS=true
+    depends_on:
+      - agentscope
+      - anythingllm
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+networks:
+  default:
+    name: paam_network

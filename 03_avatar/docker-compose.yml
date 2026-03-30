@@ -1,0 +1,76 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: paam_ollama
+    ports:
+      - "11434:11434"
+    networks:
+      - paam_network
+
+  anythingllm:
+    image: mintplexlabs/anythingllm:latest
+    container_name: paam_anythingllm
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./01_rag_knowledge/data:/app/backend/storage
+    networks:
+      - paam_network
+
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: paam_chroma
+    ports:
+      - "8002:8002"
+    networks:
+      - paam_network
+
+  agentscope:
+    build: ../02_agents
+    container_name: paam_agentscope
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./02_agents/data:/app/data
+    environment:
+      - ANYTHINGLLM_URL=http://anythingllm:3001
+    networks:
+      - paam_network
+
+  frontend:
+    build: .
+    container_name: paam_frontend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./frontend:/app
+      - ./data/tts_output:/app/data/tts_output
+    environment:
+      - ANYTHINGLLM_URL=http://anythingllm:3001
+      - USE_LOCAL_TTS=true
+    depends_on:
+      - agentscope
+      - anythingllm
+    networks:
+      - paam_network
+
+  coquitts:
+    image: ghcr.io/coqui-ai/tts:latest
+    container_name: paam_coqui_tts
+    ports:
+      - "5002:5002"
+    volumes:
+      - ./data/tts_output:/app/output
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - paam_network
+
+networks:
+  paam_network:
+    driver: bridge

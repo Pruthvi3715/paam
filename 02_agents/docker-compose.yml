@@ -1,0 +1,28 @@
+services:
+  agentscope:
+    build: .
+    container_name: paam_agentscope
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./agentscope:/app
+      - ./data:/app/data
+    environment:
+      - ANYTHINGLLM_URL=http://paam_anythingllm:3001
+      - OLLAMA_URL=http://host.docker.internal:11434
+      - OLLAMA_MODEL=llama3.1:latest
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - paam_network
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+networks:
+  paam_network:
+    external: true

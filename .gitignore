@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Data directories (should not be committed)
+*/data/
+*/storage/
+
+# Environment files (contain secrets)
+.env
+
+# Docker
+*.dockerignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Chainlit
+.chainlit/
+
+# Database
+*.db
+
+# Audio/Video generated files
+*.mp3
+*.mp4
+*.wav

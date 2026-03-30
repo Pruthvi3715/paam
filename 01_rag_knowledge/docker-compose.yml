@@ -1,0 +1,38 @@
+version: '3.9'
+
+services:
+  anythingllm:
+    image: mintplexlabs/anythingllm:latest
+    container_name: paam_anythingllm
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./data/anythingllm:/app/server/storage
+    environment:
+      - STORAGE_DIR=/app/server/storage
+      - LLM_PROVIDER=openai
+      - OPENAI_API_KEY=${GROQ_API_KEY}
+      - OPENAI_BASE_URL=https://api.groq.com/openai/v1
+      - LLM_MODEL=llama-3.3-70b-versatile
+      - EMBEDDING_MODEL=text-embedding-3-small
+      - EMBEDDING_PROVIDER=openai
+      - OPENAI_EMBEDDING_API_KEY=${GROQ_API_KEY}
+      - OPENAI_EMBEDDING_BASE_URL=https://api.groq.com/openai/v1
+      - VECTOR_DB=chroma
+      - CHROMA_ENDPOINT=http://chroma:8000
+    depends_on:
+      - chroma
+    restart: unless-stopped
+
+  chroma:
+    image: chromadb/chroma:latest
+    container_name: paam_chroma
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data/chroma:/chroma/chroma
+    restart: unless-stopped
+
+networks:
+  default:
+    name: paam_network
